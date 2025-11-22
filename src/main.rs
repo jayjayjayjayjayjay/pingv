@@ -75,16 +75,23 @@ impl App {
 
     fn on_tick(&mut self) {
         let target_ip = "8.8.8.8".parse().unwrap();
-        let ping_time = match ping::new(target_ip).send() {
-        Ok(ping_success) =>ping_success.ttl, 
-        Err(_) => 0,
-    }
+        let data = [1,2,3,4];  // ping data
+        let timeout = Duration::from_secs(1);
+        let options = ping_rs::PingOptions { ttl: 117, dont_fragment: true };
+        let result = ping_rs::send_ping(&target_ip, timeout, &data, Some(&options));
+
+        let ping_time =match result {
+            Ok(reply) => reply.rtt as u64,
+            Err(e) => 100, 
+        };
+        println!("{}",ping_time);
+
         self.pings.pop();
         self.pings.insert(0, ping_time);
     }
 
     fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
-        let tick_rate = Duration::from_millis(5000);
+        let tick_rate = Duration::from_millis(1000);
 
         let mut last_tick = Instant::now();
         loop {
@@ -121,6 +128,6 @@ impl App {
             )
             .data(&self.pings)
             .style(Style::default().fg(Color::Red));
-        frame.render_widget(sparkline, chunks[2]);
+        //frame.render_widget(sparkline, chunks[2]);
     }
 }
